@@ -1,0 +1,13 @@
+[package]
+name = "holochain-collections"
+version = "0.1.0"
+authors = ["willem <willemolding@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+hdk = { git = "https://github.com/holochain/holochain-rust" , tag = "v0.0.12-alpha1" }
+multihash = "0.8.0"
+rust-base58 = "=0.0.4"
+
+[workspace]
+exclude = ["examples"]
