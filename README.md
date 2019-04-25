@@ -70,3 +70,17 @@ impl BucketSetStorable for MyEntry {
     }
 }
 ```
+
+If you want to be able to call `retrieve_all` you must provide a way to exhaustively iterate over all possible bucket ids. This is done by implementing `BucketIterable` on your entry struct. Following the example above of using the first character of a string as the bucket_id. Lets only allow the english alphabet for this example
+
+```rust
+impl BucketIterable for MyEntry {
+    fn buckets() -> Box<Iterator<Item = String>> {
+        let alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGIJKLMNOPQRSTUVWXYZ"
+        .chars().map(|c| {
+            c.to_string()
+        });
+        Box::new(alphabet)
+    }
+}
+``` 

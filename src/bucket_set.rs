@@ -86,7 +86,7 @@ impl BucketEntry {
 pub trait BucketSetStorable {
 	fn derive_bucket_id(&self) -> String;
 
-	fn get_bucket(&self, entry_type: &AppEntryType) -> BucketEntry {
+	fn get_bucket(&self, entry_type: AppEntryType) -> BucketEntry {
 		BucketEntry{
 			bucket_for: entry_type.to_owned(),
 			id: self.derive_bucket_id(),
@@ -94,12 +94,12 @@ pub trait BucketSetStorable {
 	}
 }
 
-pub trait BucketIteratable {
+pub trait BucketIterable {
 	fn buckets() -> Box<Iterator<Item = String>>;
 }
 
 pub fn store<T: Into<JsonString> + BucketSetStorable>( entry_type: AppEntryType, entry_data: T) -> ZomeApiResult<Address> {
-	let bucket_address = hdk::commit_entry(&entry_data.get_bucket(&entry_type).entry())?;
+	let bucket_address = hdk::commit_entry(&entry_data.get_bucket(entry_type.clone()).entry())?;
 	let entry = Entry::App(
 		entry_type,
 		entry_data.into()
@@ -109,7 +109,7 @@ pub fn store<T: Into<JsonString> + BucketSetStorable>( entry_type: AppEntryType,
 	Ok(entry_address)
 }
 
-pub fn retrieve(entry_type: &AppEntryType, bucket_id: String) -> ZomeApiResult<Vec<Address>> {
+pub fn retrieve(entry_type: AppEntryType, bucket_id: String) -> ZomeApiResult<Vec<Address>> {
 	let bucket_address = BucketEntry{
 		bucket_for: entry_type.to_owned(),
 		id: bucket_id
@@ -117,10 +117,10 @@ pub fn retrieve(entry_type: &AppEntryType, bucket_id: String) -> ZomeApiResult<V
 	Ok(hdk::get_links(&bucket_address, BUCKET_LINK_TAG)?.addresses())
 }
 
-pub fn retrieve_all<T: BucketIteratable>(entry_type: AppEntryType) -> ZomeApiResult<Vec<Address>> {
+pub fn retrieve_all<T: BucketIterable>(entry_type: AppEntryType) -> ZomeApiResult<Vec<Address>> {
 	Ok(
 		T::buckets().into_iter().fold(Vec::new(), |mut addresses, bucket_id| {
-			addresses.extend(retrieve(&entry_type, bucket_id).unwrap_or(Vec::new()));
+			addresses.extend(retrieve(entry_type.clone(), bucket_id).unwrap_or(Vec::new()));
 			addresses
 		})
 	)
