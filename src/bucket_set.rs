@@ -4,7 +4,7 @@
  * Buckets have an id which must be deterministicly derivable from an entry.
  * This way it is always possible to figure out which bucket an entry must belong to.
  */
-
+use std::boxed::Box;
 use hdk::{
 	entry_definition::ValidatingEntryType,
 	error::ZomeApiResult,
@@ -94,6 +94,10 @@ pub trait BucketSetStorable {
 	}
 }
 
+pub trait BucketIteratable {
+	fn buckets() -> Box<Iterator<Item = String>>;
+}
+
 pub fn store<T: Into<JsonString> + BucketSetStorable>( entry_type: AppEntryType, entry_data: T) -> ZomeApiResult<Address> {
 	let bucket_address = hdk::commit_entry(&entry_data.get_bucket(&entry_type).entry())?;
 	let entry = Entry::App(
@@ -105,17 +109,33 @@ pub fn store<T: Into<JsonString> + BucketSetStorable>( entry_type: AppEntryType,
 	Ok(entry_address)
 }
 
-pub fn retrieve(entry_type: AppEntryType, bucket_id: String) -> ZomeApiResult<Vec<Address>> {
+pub fn retrieve(entry_type: &AppEntryType, bucket_id: String) -> ZomeApiResult<Vec<Address>> {
 	let bucket_address = BucketEntry{
-		bucket_for: entry_type,
+		bucket_for: entry_type.to_owned(),
 		id: bucket_id
 	}.entry().address();
 	Ok(hdk::get_links(&bucket_address, BUCKET_LINK_TAG)?.addresses())
 }
 
+pub fn retrieve_all<T: BucketIteratable>(entry_type: AppEntryType) -> ZomeApiResult<Vec<Address>> {
+	Ok(
+		T::buckets().into_iter().fold(Vec::new(), |mut addresses, bucket_id| {
+			addresses.extend(retrieve(&entry_type, bucket_id).unwrap_or(Vec::new()));
+			addresses
+		})
+	)
+}
+
 pub fn bucket_id_from_hash_prefix<T: AddressableContent>(entry_data: T, n_prefix_bits: u32) -> String {
 	let hash = entry_data.address();
 	hash_prefix(hash, n_prefix_bits)
+}
+
+pub fn hash_prefix_bucket_iterator(n_prefix_bits: u32) -> Box<Iterator<Item = String>> {
+	let iter = (0..2^n_prefix_bits).map(|e| {
+		e.to_string()
+	});
+	Box::new(iter)
 }
 
 fn hash_prefix(hash: Address, n_prefix_bits: u32) -> String{
