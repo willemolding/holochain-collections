@@ -1,16 +1,27 @@
-// This test file uses the tape testing framework.
-// To learn more, go here: https://github.com/substack/tape
-const { Config, Scenario } = require("@holochain/holochain-nodejs")
-Scenario.setTape(require("tape"))
+const path = require('path')
+const tape = require('tape')
 
-const dnaPath = "./dist/bucket-set-example.dna.json"
-const agentAlice = Config.agent("alice")
-const dna = Config.dna(dnaPath)
-const instanceAlice = Config.instance(agentAlice, dna)
-const scenario = new Scenario([instanceAlice], { debugLog: false })
+const { Diorama, tapeExecutor, backwardCompatibilityMiddleware } = require('@holochain/diorama')
 
-scenario.runTape("can add, retrieve, retrieve by bucket and get all", async (t, { alice }) => {
+process.on('unhandledRejection', error => {
+  // Will print "unhandledRejection err is not defined"
+  console.error('got unhandledRejection:', error);
+});
 
+const dnaPath = path.join(__dirname, "../dist/bucket-set-example.dna.json")
+const dna = Diorama.dna(dnaPath, 'bucket-set-example')
+
+const diorama = new Diorama({
+  instances: {
+    alice: dna
+  },
+  bridges: [],
+  debugLog: false,
+  executor: tapeExecutor(require('tape')),
+  middleware: backwardCompatibilityMiddleware,
+})
+
+diorama.registerScenario("can add, retrieve, retrieve by bucket and get all", async (s, t, {alice}) => {
   const addr = await alice.callSync("main", "create_my_entry", {"entry" : {"content":"sample content"}})
   const result = await alice.callSync("main", "get_my_entry", {"address": addr.Ok})
 
@@ -29,5 +40,6 @@ scenario.runTape("can add, retrieve, retrieve by bucket and get all", async (t, 
 
   const getAllResult2 = await alice.callSync("main", "get_all_entries", {})
   t.equal(getAllResult2.Ok.length, 2)
-
 })
+
+diorama.run()

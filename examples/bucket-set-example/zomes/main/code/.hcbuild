@@ -1,11 +1,14 @@
 {
-  "steps": {
-    "cargo": [
-      "build",
-      "--release",
-      "--target=wasm32-unknown-unknown",
-      "--target-dir=/home/willem/nix-holochain/main/target"
-    ]
-  },
-  "artifact": "/home/willem/nix-holochain/main/target/wasm32-unknown-unknown/release/main.wasm"
+  "steps": [
+    {
+  	  "command": "cargo",
+      "arguments": [
+        "build",
+        "--release",
+        "--target=wasm32-unknown-unknown",
+        "--target-dir=target"
+      ]
+    }
+  ],
+  "artifact": "target/wasm32-unknown-unknown/release/main.wasm"
 }
