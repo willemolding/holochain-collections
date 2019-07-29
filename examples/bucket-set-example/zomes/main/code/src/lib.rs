@@ -6,20 +6,22 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 #[macro_use]
-extern crate holochain_core_types_derive;
+extern crate holochain_json_derive;
 extern crate holochain_collections;
 
 use hdk::{
     utils,
     entry_definition::ValidatingEntryType,
     error::ZomeApiResult,
-};
-use hdk::holochain_core_types::{
-    cas::content::Address,
-    dna::entry_types::Sharing,
-    error::HolochainError,
-    json::JsonString,
-    // entry::Entry,
+    holochain_persistence_api::{
+        cas::content::Address,
+    },
+    holochain_json_api::{
+        error::JsonError, json::JsonString,
+    },
+    holochain_core_types::{
+        dna::entry_types::Sharing,
+    }
 };
 use holochain_collections::bucket_set::{
     self,
