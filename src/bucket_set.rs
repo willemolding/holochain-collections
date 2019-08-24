@@ -13,14 +13,20 @@ use hdk::{
 			Entry,
 			entry_type::AppEntryType,
 		},
-		cas::content::{AddressableContent, Address},
 		dna::entry_types::Sharing,
-		json::{JsonString, RawString},
+		link::LinkMatch
 	},
 };
+use hdk::holochain_persistence_api::{
+	cas::content::{AddressableContent, Address},
+};
+use hdk::holochain_json_api::{
+	json::{JsonString, RawString},
+};
+
 use rust_base58::{FromBase58};
 
-static BUCKET_LINK_TAG: &str = "contains";
+static BUCKET_LINK_TYPE: &str = "contains";
 
 pub struct BucketEntry {
 	bucket_for: AppEntryType,
@@ -61,7 +67,7 @@ pub fn bucket_entry_def_for(entry_type: AppEntryType) -> ValidatingEntryType {
         links: [
             to!(
                 entry_type.clone(),
-                tag: BUCKET_LINK_TAG,
+                link_type: BUCKET_LINK_TYPE,
                 validation_package: || {
                     hdk::ValidationPackageDefinition::Entry
                 },
@@ -95,7 +101,7 @@ pub trait BucketSetStorable {
 }
 
 pub trait BucketIterable {
-	fn buckets() -> Box<Iterator<Item = String>>;
+	fn buckets() -> Box<dyn Iterator<Item = String>>;
 }
 
 pub fn store<T: Into<JsonString> + BucketSetStorable>( entry_type: AppEntryType, entry_data: T) -> ZomeApiResult<Address> {
@@ -105,7 +111,7 @@ pub fn store<T: Into<JsonString> + BucketSetStorable>( entry_type: AppEntryType,
 		entry_data.into()
 	);
 	let entry_address = hdk::commit_entry(&entry)?;
-	hdk::link_entries(&bucket_address, &entry_address, BUCKET_LINK_TAG)?;
+	hdk::link_entries(&bucket_address, &entry_address, BUCKET_LINK_TYPE, "")?;
 	Ok(entry_address)
 }
 
@@ -114,7 +120,7 @@ pub fn retrieve(entry_type: AppEntryType, bucket_id: String) -> ZomeApiResult<Ve
 		bucket_for: entry_type.to_owned(),
 		id: bucket_id
 	}.entry().address();
-	Ok(hdk::get_links(&bucket_address, BUCKET_LINK_TAG)?.addresses())
+	Ok(hdk::get_links(&bucket_address, LinkMatch::Exactly(BUCKET_LINK_TYPE), LinkMatch::Any)?.addresses())
 }
 
 pub fn retrieve_all<T: BucketIterable>(entry_type: AppEntryType) -> ZomeApiResult<Vec<Address>> {
@@ -131,7 +137,7 @@ pub fn bucket_id_from_hash_prefix<T: AddressableContent>(entry_data: T, n_prefix
 	hash_prefix(hash, n_prefix_bits)
 }
 
-pub fn hash_prefix_bucket_iterator(n_prefix_bits: u32) -> Box<Iterator<Item = String>> {
+pub fn hash_prefix_bucket_iterator(n_prefix_bits: u32) -> Box<dyn Iterator<Item = String>> {
 	let iter = (0..2^n_prefix_bits).map(|e| {
 		e.to_string()
 	});
