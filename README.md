@@ -33,7 +33,7 @@ impl BucketSetStorable for MyEntry {
 }
 ```
 
-The `bucket_set::store()` and `bucket_set::retrieve()` are then available to use with any entry assicociated with this struct.
+The `bucket_set::store()` and `bucket_set::retrieve()` are then available to use with any entry associated with this struct.
 
 ```rust
 
@@ -71,7 +71,7 @@ impl BucketSetStorable for MyEntry {
 }
 ```
 
-If you want to be able to call `retrieve_all` you must provide a way to exhaustively iterate over all possible bucket ids. This is done by implementing `BucketIterable` on your entry struct. Following the example above of using the first character of a string as the bucket_id. Lets only allow the english alphabet for this example
+If you want to be able to call `retrieve_all` you must provide a way to exhaustively iterate over all possible bucket ids. This is done by implementing `BucketIterable` on your entry struct. See the example below of using the first character of a string as the bucket_id. Let's only allow the english alphabet for this example:
 
 ```rust
 impl BucketIterable for MyEntry {
